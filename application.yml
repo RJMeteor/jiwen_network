@@ -1,0 +1,103 @@
+netty:
+  port: 9003
+  url: /websocket
+  host: localhost
+server:
+  port: 9002
+spring:
+  application:
+    name: blog-9001
+  rabbitmq:
+    username: guest
+    password: rejiazyh
+    virtual-host: /
+    port: 5672
+    addresses: 154.201.91.247
+    #开启发送端消息抵达broker的确认
+    publisher-confirm-type: correlated
+    #开启发送端消息抵达队列的确认
+    publisher-returns: true
+    template:
+      #mandatory 默认为FALSE，如果exchange根据自身类型和消息routeKey无法找到一个符合条件的queue，会直接将消息扔掉
+      mandatory: true
+    listener:
+      type: simple
+      simple:
+        # 设置消费端手动 ack
+        acknowledge-mode: manual
+        prefetch: 1  #每次只能获取一条消息，处理完成才能获取下一个消息(处理消息能力平均分布)
+        default-requeue-rejected: false  #决定被拒绝的消息是否重新入队。默认值为true,需要手动basicNack时这些参数谅失效了
+        retry:
+          enabled: true  #开启消费者 程序异常情况下会进行重试
+          max-attempts: 3 #重试次数
+          initial-interval: 2000 #消费者重试间隔次数 2s
+  freemarker:
+    allow-request-override: false
+    check-template-location: true
+    charset: utf-8
+    content-type: text/html
+    expose-request-attributes: false
+    expose-session-attributes: false
+    expose-spring-macro-helpers: false
+    cache: true
+  mail:
+    # 下面这个是QQ邮箱host ， 企业邮箱 : smtp.exmail.qq.com
+    host: smtp.qq.com
+    # tencent mail port  这个是固定的
+    port: 465
+    # 你的QQ邮箱
+    username: renjia_new@qq.com
+    # 进入邮箱配置后得到的授权码
+    password: ngkhhnrlvvhhfcaf
+    test-connection: true
+    properties:
+      mail:
+        smtp:
+          ssl:
+            enable: true
+    # Redis配置
+  cache:
+    type: redis
+  redis:
+    # 超时时间
+    timeout: 10000ms
+    # 服务器地址
+    host: 154.201.91.247
+    password: renjiazyh
+    # 服务器端口号
+    port: 6379
+    # 连接数据库
+    database: 0
+    lettuce:
+      pool:
+        # 最大连接数
+        max-active: 1024
+        # 最大连接阻塞等待时间
+        max-wait: 10000ms
+        # 最大空闲连接
+        max-idle: 200
+        # 最小空闲连接
+        min-idle: 5
+  main:
+    allow-bean-definition-overriding: true
+    log-startup-info: false
+    banner-mode: off
+  datasource:
+    password: ${blog.password}
+    username: ${blog.username}
+    url: ${blog.url}
+    driver-class-name: ${blog.driver}
+  servlet:
+    multipart:
+      max-file-size: 10MB
+mybatis-plus:
+  configuration:
+    #        log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  mapper-locations: classpath:/mapper/*.xml
+

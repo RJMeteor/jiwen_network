@@ -1,0 +1,30 @@
+stages:
+  - install-build-deplod
+install-build-deplod-job:
+  stage: install-build-deplod
+  before_script:
+    - eval $(ssh-agent -s)
+    - ssh-add <(echo "$PRIVATE_KEY" )
+  tags:
+    - blog_spring
+  only:
+    - main
+  # 命令操作
+  script:
+    - echo $USER
+    - ssh -o StrictHostKeyChecking=no root@154.201.91.247 "echo 1"
+    - mkdir boot
+    - chmod 777 boot
+    - ls -l
+    - docker build -t blog_spring .
+    - if [ $(docker ps -aq --filter name=blog_spring_c) ]; then docker rm -f blog_spring_c;fi
+    - if [ $(docker images --filter "dangling=true" -q) ]; then docker rmi $(docker images --filter "dangling=true" -q);fi
+    - if [ $(docker ps -a | grep "Exited" | awk '{print $1 }') ]; then docker rm $(docker ps -a | grep "Exited" | awk '{print $1 }');fi
+    - scp -r  ./blog.sql  root@154.201.91.247:/usr/docker/mysql/init
+    - docker run -d -p 9002:9002  --name blog_spring_c blog_spring
+    - docker cp blog_spring_c:/blog_ecs.jar ./boot
+    - cd ./boot
+    - ls -l
+    - scp -r  *  root@154.201.91.247:/usr/docker/project  
+ 
+

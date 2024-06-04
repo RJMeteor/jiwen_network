@@ -1,0 +1,28 @@
+stages:
+  - install-build-deplod
+install-build-deplod-job:
+  stage: install-build-deplod
+  before_script:
+    - eval $(ssh-agent -s)
+    - ssh-add <(echo "$PRIVATE_KEY" )
+  tags:
+    - blog_r
+  only:
+    - main
+  # 命令操作
+  script:
+    - echo $USER
+    - ssh -o StrictHostKeyChecking=no ***@*****
+    - mkdir html
+    - chmod 777 html
+    - ls -l
+    - if [ $(docker ps -aq --filter name=web_blog) ]; then docker rm -f blog;fi
+    - if [ $(docker images -aq  blog_container) ]; then docker rmi -f blog_container;fi
+    - docker build -t blog_container .
+    - docker run -d  --name web_blog blog_container
+    - docker cp blog:/app/dist ./html
+    - cd ./html/dist
+    - ls
+    - scp -r  *  ***@****:/usr/docker/html/blog  
+ 
+
