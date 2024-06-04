@@ -20,7 +20,7 @@ install-build-deplod-job:
     - if [ $(docker images -aq  blog_container) ]; then docker rmi -f blog_container;fi
     - docker build -t blog_container .
     - docker run -d  --name web_blog blog_container
-    - docker cp blog:/app/dist ./html
+    - docker cp web_blog:/app/dist ./html
     - cd ./html/dist
     - ls
     - scp -r  *  ***@****:/usr/docker/html/blog  
