@@ -1,4 +1,4 @@
 .idea/
 target
 !target/*.jar
-!.gitlab-ci.yml
+!./.gitlab-ci.yml

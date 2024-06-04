@@ -2,5 +2,5 @@
 .vscode/
 dist/
 node_modules/
-!.env
-!.gitlab-ci.yml
+!./.env
+!./.gitlab-ci.yml
