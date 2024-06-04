@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.renjia.blog.mapper.BlogFeedbackMapper">
+    <sql id="all">
+        SELECT id,user_id,feedback_content_id,active,create_time,update_time, deleted FROM blog_feedback
+    </sql>
+
+    <!--jion查询-->
+    <resultMap id="resultMap" type="com.renjia.blog.pojo.BlogFeedback">
+        <!-- 一对一 、 根据user_id 获取用户信息 给 user赋值   -->
+        <association property="user" column="user_id" select="com.renjia.blog.mapper.BlogUserMapper.getUserById"/>
+        <!-- 一对一 、 根据article_content_id 获取文章内容信息 给articleContent赋值   -->
+        <association property="feedbackContent" column="feedback_content_id"
+                     select="com.renjia.blog.mapper.BlogFeedbackContentMapper.getFeedbackContent"/>
+    </resultMap>
+
+
+
+
+    <select id="getFeedbackId" resultType="long">
+         SELECT id
+        FROM blog_article
+        where article_content_id=#{feedbackContentId}
+    </select>
+
+    <select id="getFeedbackAndUserId" resultMap="resultMap">
+        <include refid="all"/>
+        where deleted=0 and user_id=#{userId}
+        order by update_time desc
+    </select>
+
+    <select id="getFeedbackAndUserNameAndTime" resultMap="resultMap">
+        <include refid="all"/>
+        <where>
+            deleted=0
+            and user_id in (SELECT n1.id FROM blog_user as n1 where n1.user_name like concat(#{userName},'%')
+            and n1.deleted=0)
+            <if test="startTime !=null">
+                and create_time &gt; #{startTime} and create_time &lt; #{endTime}
+            </if>
+        </where>
+        order by update_time desc
+    </select>
+
+
+</mapper>

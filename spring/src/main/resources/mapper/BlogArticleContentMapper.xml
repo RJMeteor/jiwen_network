@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.renjia.blog.mapper.BlogArticleContentMapper">
+    <sql id="all">
+        SELECT id,article_md FROM blog_article_content
+    </sql>
+
+    <!--jion查询-->
+    <resultMap id="resultMap" type="com.renjia.blog.pojo.BlogArticleContent">
+        <!-- 一对一 、 根据user_id 获取用户信息 给 user赋值   -->
+        <association property="articleId" column="id" select="com.renjia.blog.mapper.BlogArticleMapper.getArticleId"/>
+    </resultMap>
+
+    <!--根据内容id获取文章内容数据-->
+    <select id="getArticleContentById"
+            resultMap="resultMap">
+        <include refid="all"/>
+        where id=#{articleContentId}
+    </select>
+
+    <!--添加文章内容-->
+    <insert id="inserArticleContent"
+            parameterType="com.renjia.blog.pojo.BlogArticleContent">
+        <selectKey keyColumn="id"
+                   keyProperty="id"
+                   order="AFTER" resultType="long">
+            select LAST_INSERT_ID()
+        </selectKey>
+        INSERT INTO blog_article_content(article_md) VALUES (#{articleMd});
+    </insert>
+</mapper>

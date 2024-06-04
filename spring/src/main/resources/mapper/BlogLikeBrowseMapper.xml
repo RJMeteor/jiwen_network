@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.renjia.blog.mapper.BlogLikeBrowseMapper">
+    <sql id="all">
+        SELECT id, user_id, person_id, article_id, like_browse_limiter, update_time, active, stated
+        FROM blog_like_browse
+    </sql>
+
+    <!--jion查询-->
+    <resultMap id="resultMap" type="com.renjia.blog.pojo.BlogLikeBrowse">
+        <!-- 一对一 、 根据user_id 获取用户信息 给 user赋值   -->
+        <association property="user" column="user_id" select="com.renjia.blog.mapper.BlogUserMapper.getUserById"/>
+        <association property="person" column="person_id" select="com.renjia.blog.mapper.BlogUserMapper.getUserById"/>
+        <association property="article" column="article_id"
+                     select="com.renjia.blog.mapper.BlogArticleMapper.getArticleById"/>
+    </resultMap>
+
+    <select id="getLikeCountByArticleId"
+            resultType="long">
+       select user_id from blog_like_browse
+        where article_id=#{articleId} and like_browse_limiter=0 and deleted=0
+    </select>
+
+    <select id="getBrowseCountByArticleId"
+            resultType="long">
+       select count(1) from blog_like_browse
+        where article_id=#{articleId} and like_browse_limiter=1 and deleted=0
+    </select>
+
+    <select id="getIsLikeByArticleId" resultType="integer">
+       select count(1) from blog_like_browse
+        where article_id=#{articleId} and user_id=#{userId} and like_browse_limiter=0 and deleted=0
+    </select>
+
+
+    <select id="getLikeByPersonId" resultMap="resultMap">
+        <include refid="all"/>
+        where person_id=#{personId} and like_browse_limiter=0 and active=0 and deleted=0
+    </select>
+
+    <update id="updateLikeActive">
+        <foreach collection="list" item="item" separator=";">
+            update blog_like_browse
+            set
+            active=1
+            where
+            id = #{item}
+        </foreach>
+    </update>
+
+
+    <select id="getLikeById" resultMap="resultMap">
+        <include refid="all"/>
+        where id=#{likeId}
+    </select>
+
+
+    <insert id="addLike" parameterType="com.renjia.blog.pojo.BlogLikeBrowse">
+        <selectKey keyColumn="id"
+                   keyProperty="id"
+                   order="AFTER" resultType="long">
+            select LAST_INSERT_ID()
+        </selectKey>
+        insert into blog_like_browse(user_id,person_id,article_id, like_browse_limiter,update_time,create_time)
+        values (#{userId},#{personId},#{articleId},#{likeBrowseLimiter},now(),now())
+    </insert>
+
+
+    <select id="getOhtArticle"
+            resultMap="resultMap">
+        <include refid="all"/>
+        where  deleted=0
+        and article_id  in (SELECT n1.id FROM blog_article as n1 where n1.deleted=0 and n1.article_privacy=0 and n1.article_limiter=0)
+        group by article_id
+        order by count(article_id) desc
+        limit 0,7
+    </select>
+
+
+    <select id="getOhtTopic"
+            resultMap="resultMap">
+        <include refid="all"/>
+        where  deleted=0
+        and article_id in ( SELECT n1.id FROM blog_article as n1 where n1.deleted=0 and n1.article_privacy=0 and n1.article_limiter=1)
+        group by article_id
+        order by count(article_id) desc
+        limit 0,7
+    </select>
+</mapper>

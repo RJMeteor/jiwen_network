@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.renjia.blog.mapper.BlogFeedbackContentMapper">
+    <sql id="all">
+        SELECT id,feedback_content,create_time,update_time, deleted FROM blog_feedback_content
+    </sql>
+
+    <select id="getFeedbackContent" resultType="com.renjia.blog.pojo.BlogFeedbackContent">
+        <include refid="all"/>
+        where id=#{feedbackId} and deleted=0
+    </select>
+
+    <insert id="inserFeedbackContent"
+            parameterType="com.renjia.blog.pojo.BlogFeedbackContent">
+        <selectKey keyColumn="id"
+                   keyProperty="id"
+                   order="AFTER" resultType="long">
+            select LAST_INSERT_ID()
+        </selectKey>
+        insert into
+        blog_feedback_content(feedback_content,create_time,update_time)
+        values
+        (#{feedbackContent},now(),now())
+    </insert>
+</mapper>

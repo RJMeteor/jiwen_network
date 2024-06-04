@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录验证码邮件模板</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .code {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .instructions {
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        .footer {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f2f2f2;
+            border-top: 1px solid #ddd;
+        }
+
+        .footer p {
+            color: #888;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <p class="code">尊敬的用户：</p>
+    <p class="code">您的${(params.content)!""}验证码是：<span style="color: #007bff; font-weight: bold;">${(params.code)!""}</span></p>
+    <p class="instructions">请在页面上输入以上验证码完成相关验证操作。</p>
+    <p class="instructions">验证码将在${(params.time)!""}分钟后失效，请尽快使用。</p>
+    <div class="footer">
+        <br/>感谢您选择我们的服务，如有任何问题，请联系我们：renjia_new@qq.com
+        <p>如果您未进行此操作，请忽略此邮件。</p>
+        <p>祝您使用愉快</p>
+
+    </div>
+</div>
+
+</body>
+</html>
+

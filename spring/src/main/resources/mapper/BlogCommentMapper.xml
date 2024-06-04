@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.renjia.blog.mapper.BlogCommentMapper">
+    <sql id="all">
+        SELECT id, user_id, comment_key_id, person_id, article_id, comment_content_id, active, update_time, stated
+        FROM blog_comment
+    </sql>
+
+    <!--jion查询-->
+    <resultMap id="resultMap" type="com.renjia.blog.pojo.BlogComment">
+        <!-- 一对一 、 根据user_id 获取用户信息 给 user赋值   -->
+        <association property="user" column="user_id" select="com.renjia.blog.mapper.BlogUserMapper.getUserById"/>
+        <association property="person" column="person_id" select="com.renjia.blog.mapper.BlogUserMapper.getUserById"/>
+        <!-- 一对一 、 根据article_content_id 获取文章内容信息 给articleContent赋值   -->
+        <association property="isChildren" column="id"
+                     select="com.renjia.blog.mapper.BlogCommentMapper.getIsChildrenById"/>
+        <!---->
+        <association property="commentContent" column="comment_content_id"
+                     select="com.renjia.blog.mapper.BlogCommentContentMapper.getCommentContentById"/>
+    </resultMap>
+
+    <resultMap id="resultMapExtend" type="com.renjia.blog.pojo.BlogComment" extends="resultMap">
+        <association property="article" column="article_id"
+                     select="com.renjia.blog.mapper.BlogArticleMapper.getArticleById"/>
+    </resultMap>
+
+    <select id="getIsChildrenById"
+            resultType="integer">
+       select count(1) from blog_comment
+        where comment_key_id=#{commentId} and deleted=0
+        limit 0,1
+    </select>
+
+    <select id="getCommentCountByArticleId"
+            resultType="long">
+       select count(1) from blog_comment
+        where article_id=#{articleId} and deleted=0
+    </select>
+
+    <select id="getCommentIdByCommentContentId" resultType="long">
+        SELECT id
+        FROM blog_comment
+        where comment_content_id=#{commentContentId} and deleted=0
+ </select>
+
+    <select id="getCommentById"
+            resultMap="resultMap">
+        <include refid="all"/>
+        where id=#{commentId} and deleted=0
+    </select>
+
+    <select id="getCommentsByArticleId" resultMap="resultMap">
+        <include refid="all"/>
+        where article_id=#{articleId} and comment_key_id=#{commentKeyId} and deleted=0 order by update_time desc
+    </select>
+
+    <select id="getCommentNofit" resultMap="resultMap">
+        <include refid="all"/>
+        where ((person_id=#{personId} and user_id=#{userId}) or (person_id=#{userId} and user_id=#{personId}) )
+        and article_id=#{articleId} and deleted=0 and active=0 order by update_time asc
+    </select>
+
+    <select id="getCommentByOtherPersonId" resultMap="resultMap">
+        SELECT  user_id, id,comment_key_id, person_id,  article_id,
+        comment_content_id, active, update_time, stated
+         FROM blog_comment WHERE
+         id in (SELECT  max(id) FROM blog_comment where person_id=#{personId}  and deleted=0 and active=0 GROUP BY user_id )
+         and  article_id=(SELECT n1.id  FROM blog_article as n1 where n1.id=article_id and n1.deleted=0 )
+         order by update_time desc
+    </select>
+
+    <select id="getCommentByOtherPersonIdAndUserId" resultMap="resultMapExtend">
+        SELECT id, user_id, comment_key_id, person_id,  article_id, comment_content_id, active, update_time, stated
+        FROM blog_comment
+        where
+        id in (SELECT  max(id) FROM blog_comment
+        where person_id=#{personId}
+        and  article_id=(SELECT n1.id  FROM blog_article as n1 where n1.id=article_id and n1.deleted=0 )
+        and user_id=#{userId}
+        and deleted=0  and active=0
+        GROUP BY article_id )
+         order by update_time desc
+    </select>
+
+    <update id="updateCommentsActive">
+        <foreach collection="list" item="item" separator=";">
+            update blog_comment
+            set
+            active=1
+            where user_id=(select b.user_id FROM (select * FROM blog_comment) as b  where b.id = #{item})
+            and person_id=(select c.person_id FROM (select * FROM blog_comment) as c  where c.id = #{item})
+        </foreach>
+    </update>
+
+    <insert id="addComment" parameterType="com.renjia.blog.pojo.BlogComment">
+        <selectKey keyColumn="id"
+                   keyProperty="id"
+                   order="AFTER" resultType="long">
+            select LAST_INSERT_ID()
+        </selectKey>
+        insert into blog_comment(user_id, comment_key_id, person_id, article_id, comment_content_id, create_time,
+        update_time)
+        values (#{userId},#{commentKeyId},#{personId},#{articleId},#{commentContentId},now(),now())
+    </insert>
+</mapper>

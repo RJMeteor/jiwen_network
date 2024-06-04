@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.renjia.blog.mapper.BlogArticleMapper">
+
+    <sql id="all">
+        SELECT id, user_id, article_image, article_title, article_limiter, article_content_id,  update_time, article_privacy
+        FROM blog_article
+    </sql>
+
+    <!--jion查询-->
+    <resultMap id="resultMap" type="com.renjia.blog.pojo.BlogArticle">
+        <!-- 一对一 、 根据user_id 获取用户信息 给 user赋值   -->
+        <association property="user" column="user_id" select="com.renjia.blog.mapper.BlogUserMapper.getUserById"/>
+        <!-- 一对一 、 根据article_content_id 获取文章内容信息 给articleContent赋值   -->
+        <association property="articleContent" column="article_content_id"
+                     select="com.renjia.blog.mapper.BlogArticleContentMapper.getArticleContentById"/>
+        <!-- 一对一 、 根据文章id 获取文章评论数信息 给commentCount赋值   -->
+        <association property="commentCount" column="id"
+                     select="com.renjia.blog.mapper.BlogCommentMapper.getCommentCountByArticleId"/>
+        <!-- 一对一 、 根据文章id 获取文章浏览数信息 给articleContent赋值   -->
+        <association property="browseCount" column="id"
+                     select="com.renjia.blog.mapper.BlogLikeBrowseMapper.getBrowseCountByArticleId"/>
+        <!-- 一对一 、 根据文章id 获取文章收藏数信息 给favoriteCount赋值   -->
+        <collection property="favoriteUserId" column="id"
+                    select="com.renjia.blog.mapper.BlogFavoriteMapper.getFavoriteCountByArticleId"/>
+        <!-- 一对一 、 根据文章id 获取是否已点赞 给isLike赋值   -->
+        <!--  一对多，根据文章id 获取文章标签列表，给articleLableClasss     -->
+        <collection property="articleLableClasss"
+                    column="id"
+                    select="com.renjia.blog.mapper.BlogArticleLableClassMapper.getArticleLableClassssByArticleId"/>
+        <!-- 一对一 、 根据文章id 获取文章点赞数信息 给likeCount赋值   -->
+        <collection property="likeUserId" column="id"
+                    select="com.renjia.blog.mapper.BlogLikeBrowseMapper.getLikeCountByArticleId"/>
+    </resultMap>
+
+
+    <!--根据用户数据查询-->
+    <select id="articleListByNameAndTitleAndLableId" resultMap="resultMap">
+        SELECT id, user_id, article_image, article_title, article_limiter, article_content_id, create_time, update_time,
+        article_privacy,deleted
+        FROM blog_article
+        <where>
+            and user_id in (select n1.id from blog_user as n1 where n1.user_name like concat(#{userName},'%') and
+            n1.deleted=0)
+            <if test="lableId != 0">
+                and id in ( SELECT article_id FROM blog_article_lable_class where article_lables_id=#{lableId})
+            </if>
+            and article_title like concat(#{articleTitle},'%')
+            order by update_time desc
+        </where>
+    </select>
+
+
+    <!--根据用户数据查询-->
+    <select id="articleByUserIdAndName" resultMap="resultMap">
+        <include refid="all"/>
+        <where>
+            and deleted=0 and user_id=#{userId}
+            <if test="articleName != null and articleName !='' ">
+                and article_title like concat(concat('%',#{articleName}),'%')
+            </if>
+            <if test="isPrivate != null and isPrivate == 1">
+                and article_privacy=0
+            </if>
+            and article_limiter=#{limiter}
+            and deleted=0 order by update_time desc
+        </where>
+    </select>
+
+    <!--根据文章名和文章标签查询-->
+    <select id="articlesByNameAndLabel" resultMap="resultMap">
+        <include refid="all"/>
+        <where>
+            and deleted=0
+            and user_id in (select n1.id from blog_user as n1 where n1.id=user_id and n1.deleted=0)
+            <if test="label != 0">
+                and id in ( SELECT article_id FROM blog_article_lable_class where article_lables_id=#{label})
+            </if>
+            <if test="articlesName != null and articlesName !='' ">
+                and article_title like carticlesByNameAndLabelAndUserIdoncat(concat('%',#{articlesName}),'%')
+            </if>
+            and article_limiter=#{limiter} and article_privacy=#{privacy}
+        </where>
+        order by update_time desc
+    </select>
+
+    <select id="articlesByNameAndLabelAndUserId" resultMap="resultMap">
+        <include refid="all"/>
+        <where>
+            and deleted=0
+            and user_id in (select n1.id from blog_user as n1 where n1.id=user_id and n1.deleted=0)
+            and user_id in ( select an.attention_user_id from blog_attention as an where an.user_id=#{userId} and an.deleted=0)
+            <if test="label != 0">
+                and id in ( SELECT article_id FROM blog_article_lable_class where article_lables_id=#{label})
+            </if>
+            <if test="articlesName != null and articlesName !='' ">
+                and article_title like concat(concat('%',#{articlesName}),'%')
+            </if>
+            and article_limiter=#{limiter} and article_privacy=#{privacy}
+        </where>
+        order by update_time desc
+    </select>
+
+    <select id="getArticleId" resultType="long">
+         SELECT id
+        FROM blog_article
+        where article_content_id=#{articlesContentId}
+    </select>
+
+    <select id="getArticlesByUserIdAndArticlesId" resultMap="resultMap">
+        <include refid="all"/>
+        where deleted=0 and user_id=#{userId} and id=#{articlesId}
+        order by update_time desc
+    </select>
+
+    <insert id="inserArticle"
+            parameterType="com.renjia.blog.pojo.BlogArticle">
+        <selectKey keyColumn="id"
+                   keyProperty="id"
+                   order="AFTER" resultType="long">
+            select LAST_INSERT_ID()
+        </selectKey>
+        insert into
+        blog_article(user_id, article_image, article_title, article_limiter, article_content_id, update_time,
+        article_privacy,create_time)
+        values
+        (#{userId},#{articleImage},#{articleTitle},#{articleLimiter},#{articleContentId},now(),#{articlePrivacy},now())
+    </insert>
+
+    <select id="getArticleById"
+            resultMap="resultMap">
+        <include refid="all"/>
+        where id=#{articleId} and deleted=0
+        order by update_time desc
+    </select>
+
+</mapper>

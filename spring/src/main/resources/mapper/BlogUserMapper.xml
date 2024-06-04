@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.renjia.blog.mapper.BlogUserMapper">
+    <sql id="userInclude">
+        SELECT id, user_name, user_email, user_phone, user_sex, user_image, user_intro, update_time FROM blog_user
+    </sql>
+
+    <!--jion查询-->
+    <resultMap id="resultMap" type="com.renjia.blog.pojo.BlogUser">
+        <association property="id" column="id" select="com.renjia.blog.mapper.BlogUserMapper.getUserId"/>
+        <collection property="attentionUserId"
+                    column="id"
+                    select="com.renjia.blog.mapper.BlogAttentionMapper.getAttentionUserIds"/>
+        <!-- 一对多 、 根据文章id 获取文章点赞数信息 给likeCount赋值   -->
+        <collection property="fensUserId" column="id"
+                    select="com.renjia.blog.mapper.BlogAttentionMapper.getFenUserIds"/>
+    </resultMap>
+
+    <!--  查询用户信息  -->
+    <select id="userlistByNameAndEmail"
+            resultType="com.renjia.blog.pojo.BlogUser">
+         SELECT id, user_name, user_email, user_phone, user_sex, user_image, user_intro, create_time,deleted
+FROM blog_user
+        where user_name like concat(#{userName},'%') and user_email like concat(#{userEmail},'%')
+    </select>
+
+    <!--根据用户名、邮箱、密码获取用户数据-->
+    <select id="getUserId"
+            resultType="long">
+        select id from blog_user
+        where id=#{userId} and deleted=0
+    </select>
+
+    <!--根据用户名、邮箱、密码获取用户数据-->
+    <select id="userByNameEmailAndPassToSelect"
+            resultMap="resultMap"
+            parameterType="com.renjia.blog.pojo.BlogUser">
+        <include refid="userInclude"/>
+        where (user_name=#{userName} or user_email=#{userName}) and user_pass=#{userPass} and deleted=0
+    </select>
+
+    <!--根据用户id用户数据-->
+    <select id="getUserById"
+            resultMap="resultMap">
+        <include refid="userInclude"/>
+        where id=#{userId} and deleted=0
+    </select>
+
+    <!--添加用户数据-->
+    <insert id="userByInsert"
+            parameterType="com.renjia.blog.pojo.BlogUser">
+        <selectKey keyColumn="id"
+                   keyProperty="id"
+                   order="AFTER" resultType="long">
+            select LAST_INSERT_ID()
+        </selectKey>
+        insert into blog_user(user_name,user_pass, user_email, user_phone, user_sex, user_image,
+        user_intro,update_time,create_time)
+        values (#{userName},#{userPass},#{userEmail},#{userPhone},#{userSex},#{userImage},#{userIntro},now(),now())
+    </insert>
+
+</mapper>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.renjia.blog.mapper.BlogArticleLableClassMapper">
+    <sql id="all">
+        SELECT id, article_id, article_lables_id, update_time
+        FROM blog_article_lable_class
+    </sql>
+    <!--jion查询-->
+    <resultMap id="resultMap" type="com.renjia.blog.pojo.BlogArticleLableClass">
+        <!-- 一对一 、 根据article_lables_id(文章标签id) 获取文章标签信息 给 articleLables赋值   -->
+        <association property="articleLables"
+                     column="article_lables_id"
+                     select="com.renjia.blog.mapper.BlogArticleLablesMapper.getArticleLablesByLablesId"/>
+    </resultMap>
+    <select
+            id="getArticleLableClassssByArticleId"
+            resultMap="resultMap">
+        <include refid="all"/>
+        where article_id=#{articleId} and deleted=0
+    </select>
+
+</mapper>

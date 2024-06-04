@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.renjia.blog.mapper.BlogCommentContentMapper">
+
+    <sql id="all">
+        select id,comment_content from blog_comment_content
+    </sql>
+
+    <resultMap id="resultMap" type="com.renjia.blog.pojo.BlogCommentContent">
+        <association property="commentId" column="id"
+                     select="com.renjia.blog.mapper.BlogCommentMapper.getCommentIdByCommentContentId"/>
+    </resultMap>
+
+    <select id="getCommentContentById" resultMap="resultMap">
+        <include refid="all"/>
+        where id=#{commentContentId}
+    </select>
+
+    <insert id="addCommentContent" parameterType="com.renjia.blog.pojo.BlogCommentContent">
+        <selectKey keyColumn="id"
+                   keyProperty="id"
+                   order="AFTER" resultType="long">
+            select LAST_INSERT_ID()
+        </selectKey>
+        insert into blog_comment_content(comment_content)
+        values (#{commentContent})
+    </insert>
+</mapper>

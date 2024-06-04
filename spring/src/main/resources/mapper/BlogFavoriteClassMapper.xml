@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.renjia.blog.mapper.BlogFavoriteClassMapper">
+    <!--  blog_favorite_class   id BIGINT auto_increment,-->
+    <!--    user_id BIGINT NOT null COMMENT '用户id',-->
+    <!--    favorite_class_name varchar(30) COMMENT '收藏夹名字',-->
+    <sql id="all">
+        select id,user_id,favorite_class_name,favorite_class_privacy,update_time from blog_favorite_class
+    </sql>
+
+    <select id="getFavoriteClassById"
+            resultType="com.renjia.blog.pojo.BlogFavoriteClass">
+        <include refid="all"/>
+        where id=#{favoriteClassId} and deleted=0
+    </select>
+</mapper>

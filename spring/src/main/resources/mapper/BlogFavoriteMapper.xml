@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.renjia.blog.mapper.BlogFavoriteMapper">
+    <sql id="all">
+    SELECT id, user_id,person_id, favorite_class_id, article_id, update_time,active
+FROM blog_favorite
+</sql>
+    <!--jion查询-->
+    <resultMap id="resultMap" type="com.renjia.blog.pojo.BlogFavorite">
+        <!-- 一对一 、 根据user_id 获取用户信息 给 user赋值   -->
+        <association property="user" column="user_id" select="com.renjia.blog.mapper.BlogUserMapper.getUserById"/>
+        <association property="person" column="person_id" select="com.renjia.blog.mapper.BlogUserMapper.getUserById"/>
+        <association property="favoriteClass" column="favorite_class_id"
+                     select="com.renjia.blog.mapper.BlogFavoriteClassMapper.getFavoriteClassById"/>
+        <association property="article" column="article_id"
+                     select="com.renjia.blog.mapper.BlogArticleMapper.getArticleById"/>
+    </resultMap>
+
+    <select id="getFavoriteCountByArticleId"
+            resultType="long">
+       select user_id from blog_favorite
+        where article_id=#{articleId} and deleted=0
+    </select>
+    <select id="getIsFavoriteByArticleId" resultType="integer">
+       select count(1) from blog_favorite
+        where article_id=#{articleId} and user_id=#{userId} and deleted=0
+    </select>
+
+    <!--  blog_favorite_class   id BIGINT auto_increment,-->
+    <!--    user_id BIGINT NOT null COMMENT '用户id',-->
+    <!--    favorite_class_name varchar(30) COMMENT '收藏夹名字',-->
+    <!--<sql id="all">
+        SELECT id, user_id, article_image, article_title, article_limiter, article_content_id,  update_time, article_privacy
+        FROM blog_article
+    </sql>-->
+    <!--    (Long userId, String articleName, Long favoriteClassId, Integer isPrivate-->
+
+    <select id="getFavoriteArticleByUserId" resultMap="resultMap">
+        SELECT DISTINCT e1.id, e1.user_id,e1.person_id, e1.favorite_class_id, e1.article_id, e1.update_time
+        FROM blog_favorite
+        as e1
+        join blog_favorite_class as e2
+        on e1.favorite_class_id=e2.id
+        <where>
+            and e1.user_id=#{userId}
+            <if test="favoriteClassId !=null and favoriteClassId != 0">
+                and e1.favorite_class_id =#{favoriteClassId}
+            </if>
+            <if test="isPrivate != null and isPrivate == 1">
+                and e2.favorite_class_privacy=0
+            </if>
+            and e1.article_id
+            in (SELECT id from blog_article as e3 WHERE e3.article_title like concat(concat('%',#{articleName}),'%'))
+            and e1.deleted=0
+        </where>
+    </select>
+
+    <select id="getFavoritesByPersonId" resultMap="resultMap">
+        <include refid="all"/>
+        where
+        article_id in (SELECT id FROM blog_article where deleted=0)
+        and person_id=#{personId}  and active=0 and deleted=0
+    </select>
+
+    <select id="getFavoritesById" resultMap="resultMap">
+        <include refid="all"/>
+        where id=#{favoritesId}
+    </select>
+
+    <update id="updateFavoritesActive">
+        <foreach collection="list" item="item" separator=";">
+            update blog_favorite
+            set
+            active=1
+            where
+            id = #{item}
+        </foreach>
+    </update>
+
+    <insert id="addFavorites" parameterType="com.renjia.blog.pojo.BlogFavorite">
+        <selectKey keyColumn="id"
+                   keyProperty="id"
+                   order="AFTER" resultType="long">
+            select LAST_INSERT_ID()
+        </selectKey>
+        insert into blog_favorite(user_id,person_id,favorite_class_id, article_id,update_time,create_time)
+        values (#{userId},#{personId},#{favoriteClassId},#{articleId},now(),now())
+    </insert>
+</mapper>

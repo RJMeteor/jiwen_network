@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.renjia.blog.mapper.BlogChattingRecordsMapper">
+    <sql id="all">
+    SELECT
+    id,
+    sender_user_id,
+    acceptor_user_id,
+    chatting_records_content_id,
+    read_status,
+    update_time,
+    active
+    FROM
+        blog_chatting_records
+    </sql>
+    <!--jion查询-->
+    <resultMap id="resultMap" type="com.renjia.blog.pojo.BlogChattingRecords">
+        <association property="senderUser" column="sender_user_id"
+                     select="com.renjia.blog.mapper.BlogUserMapper.getUserById"/>
+        <association property="acceptorUser" column="acceptor_user_id"
+                     select="com.renjia.blog.mapper.BlogUserMapper.getUserById"/>
+        <association property="chattingRecordsContent" column="chatting_records_content_id"
+                     select="com.renjia.blog.mapper.BlogChattingRecordsContentMapper.getContentId"/>
+
+    </resultMap>
+
+    <!--添加用户数据-->
+    <insert id="addChat"
+            parameterType="com.renjia.blog.pojo.BlogChattingRecords">
+        <selectKey keyColumn="id"
+                   keyProperty="id"
+                   order="AFTER" resultType="long">
+            select LAST_INSERT_ID()
+        </selectKey>
+        insert into blog_chatting_records(sender_user_id,acceptor_user_id,chatting_records_content_id,update_time,create_time)
+        values (#{senderUserId},#{acceptorUserId},#{chattingRecordsContentId},now(),now())
+    </insert>
+
+    <select id="getChat" resultMap="resultMap">
+        <include refid="all"/>
+        where id=#{chatId}
+    </select>
+
+
+    <select id="getChatNofit" resultMap="resultMap">
+        <include refid="all"/>
+        where ((acceptor_user_id=#{acceptorUserId} and sender_user_id=#{senderUserId})
+        or (acceptor_user_id=#{senderUserId} and sender_user_id=#{acceptorUserId}) )
+         and deleted=0 and active=0 order by id desc
+    </select>
+
+    <select id="getChatByOtherPersonId" resultMap="resultMap">
+        SELECT  id,
+    sender_user_id,
+    acceptor_user_id,
+    chatting_records_content_id,
+    read_status,
+    update_time,
+    active
+         FROM blog_chatting_records WHERE
+         id in (SELECT  max(id) FROM blog_chatting_records where acceptor_user_id=#{acceptorUserId}  and deleted=0 and active=0 GROUP BY sender_user_id )
+         order by id desc
+    </select>
+
+    <update id="updateChatsActive">
+        <foreach collection="list" item="item" separator=";">
+            update blog_chatting_records
+            set
+            active=1
+            where sender_user_id=(select b.sender_user_id FROM (select * FROM blog_chatting_records) as b  where b.id = #{item})
+            and acceptor_user_id=(select c.acceptor_user_id FROM (select * FROM blog_chatting_records) as c  where c.id = #{item})
+        </foreach>
+    </update>
+</mapper>

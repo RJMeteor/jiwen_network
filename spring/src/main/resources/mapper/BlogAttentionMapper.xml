@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.renjia.blog.mapper.BlogAttentionMapper">
+
+    <sql id="all">
+            select id ,user_id,attention_user_id ,update_time ,active ,stated from blog_attention
+
+    </sql>
+
+
+    <!--jion查询-->
+    <resultMap id="resultMap" type="com.renjia.blog.pojo.BlogAttention">
+        <!-- 一对一 、 根据user_id 获取用户信息 给 user赋值   -->
+        <association property="user" column="user_id" select="com.renjia.blog.mapper.BlogUserMapper.getUserById"/>
+        <association property="attentionUser" column="attention_user_id"
+                     select="com.renjia.blog.mapper.BlogUserMapper.getUserById"/>
+    </resultMap>
+
+    <select id="getAttentionByPersonId" resultMap="resultMap">
+        <include refid="all"/>
+        where user_id=#{personId} and active=0 and deleted=0
+    </select>
+
+    <select id="getFens" resultMap="resultMap">
+        <include refid="all"/>
+        where attention_user_id=#{personId} and deleted=0
+    </select>
+
+    <select id="getFenUserIds" resultType="long">
+              select user_id  from blog_attention
+        where attention_user_id=#{personId}  and deleted=0
+    </select>
+
+    <select id="getAttentionUserIds" resultType="long">
+       select attention_user_id  from blog_attention
+        where user_id=#{childrenId}  and deleted=0
+    </select>
+
+    <select id="getAttentions" resultMap="resultMap">
+        <include refid="all"/>
+        where user_id=#{childrenId} and deleted=0
+    </select>
+
+    <update id="updateAttentionActive">
+        <foreach collection="list" item="item" separator=";">
+            update blog_attention
+            set
+            active=1
+            where
+            id = #{item}
+        </foreach>
+    </update>
+
+    <select id="getAttentionsById" resultMap="resultMap">
+        <include refid="all"/>
+        where id=#{attentionsId}
+    </select>
+
+
+    <insert id="addAttentions" parameterType="com.renjia.blog.pojo.BlogAttention">
+        <selectKey keyColumn="id"
+                   keyProperty="id"
+                   order="AFTER" resultType="long">
+            select LAST_INSERT_ID()
+        </selectKey>
+        insert into blog_attention(user_id,attention_user_id,update_time,create_time)
+        values (#{userId},#{attentionUserId},now(),now())
+    </insert>
+
+
+    <select id="getOhtUser"
+            resultMap="resultMap">
+        <include refid="all"/>
+        where  deleted=0
+        and attention_user_id in (SELECT n1.id FROM blog_user as n1 where n1.deleted=0)
+        group by attention_user_id
+        order by count(attention_user_id) desc
+        limit 0,7
+    </select>
+</mapper>
