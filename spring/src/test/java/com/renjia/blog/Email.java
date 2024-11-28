@@ -1,4 +1,5 @@
-import com.renjia.blog.pojo.BlogComment;
+package com.renjia.blog;
+
 import com.renjia.blog.util.other.MailMessage;
 import com.renjia.blog.util.MailUtil;
 import org.junit.runner.RunWith;
@@ -8,8 +9,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.List;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest

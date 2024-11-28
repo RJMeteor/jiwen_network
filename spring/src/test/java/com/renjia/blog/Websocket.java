@@ -1,3 +1,5 @@
+package com.renjia.blog;
+
 import com.renjia.blog.util.other.WebsocketManagerUtil;
 import com.renjia.blog.util.other.WebsocketClient;
 

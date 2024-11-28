@@ -1,25 +1,8 @@
-import com.aliyun.oss.OSS;
-import com.aliyun.oss.event.ProgressEvent;
-import com.aliyun.oss.event.ProgressListener;
-import com.aliyun.oss.model.PutObjectRequest;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.renjia.blog.config.OSSCloudConfig;
-import com.renjia.blog.pojo.BlogUser;
+package com.renjia.blog;
+
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.web.multipart.MultipartFile;
-
-import javax.annotation.Resource;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-
-import static com.aliyun.oss.event.ProgressEventType.TRANSFER_COMPLETED_EVENT;
 
 
 @RunWith(SpringRunner.class)
