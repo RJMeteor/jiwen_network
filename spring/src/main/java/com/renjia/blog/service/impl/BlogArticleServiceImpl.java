@@ -14,20 +14,35 @@ import com.renjia.blog.service.IBlogArticleLableClassService;
 import com.renjia.blog.service.IBlogArticleService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.renjia.blog.util.OSSCloudClient;
+import com.renjia.blog.util.RedisUtil;
+import com.renjia.blog.util.TrieSearcherUtil;
 import com.renjia.blog.util.exceptions.EmptyArticleException;
 import com.renjia.blog.util.exceptions.OtherException;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.text.Text;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.MatchQueryBuilder;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
+import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -51,6 +66,13 @@ public class BlogArticleServiceImpl extends ServiceImpl<BlogArticleMapper, BlogA
 
     @Autowired
     private TransactionTemplate transactionTemplate;
+
+    @Autowired
+    private TrieSearcherUtil trieSearcherUtil;
+
+    @Autowired
+    @Qualifier("remoteHighLevelClient")
+    private RestHighLevelClient remoteHighLevelClient;
 
 
     @Override
@@ -123,6 +145,8 @@ public class BlogArticleServiceImpl extends ServiceImpl<BlogArticleMapper, BlogA
     @Override
     public Integer inserArticle(BlogArticle blogArticle, ArrayList<BlogArticleLableClass> blogArticleLableClass) {
         BlogArticleContent articleContent = blogArticle.getArticleContent();
+        String replace = trieSearcherUtil.replace(articleContent.getArticleMd(), "****");
+        articleContent.setArticleMd(replace);
         Integer ex = transactionTemplate.execute((transactionStatus) ->
                 Optional.ofNullable(blogArticle).flatMap(article -> {
                     blogArticleContentMapper.inserArticleContent(articleContent);
@@ -136,15 +160,23 @@ public class BlogArticleServiceImpl extends ServiceImpl<BlogArticleMapper, BlogA
                     return Optional.ofNullable(integer);
                 }).filter(se -> {
                     if (!ObjectUtils.isEmpty(blogArticleLableClass)) {
+                        redisTemplate.boundZSetOps(RedisUtil.HOTUSER).incrementScore(blogArticle.getUserId(), 1);
                         return iBlogArticleLableClassService.saveBatch(blogArticleLableClass);
                     }
                     return false;
-                }).orElseThrow(() -> new OtherException("提交失败")));
+                }).orElseThrow(() -> {
+                    redisTemplate.boundZSetOps(RedisUtil.HOTUSER).incrementScore(blogArticle.getUserId(), -1);
+                    return new OtherException("提交失败");
+                }));
         return ex;
     }
 
     @Override
     public Integer deleteArticleByIds(List<Integer> articleIds) {
+        List<BlogArticle> blogArticles = this.listByIds(articleIds);
+        for (BlogArticle blogArticle : blogArticles) {
+            redisTemplate.boundZSetOps(RedisUtil.HOTUSER).incrementScore(blogArticle.getUserId(), -1);
+        }
         int i = this.getBaseMapper().deleteBatchIds(articleIds);
         return i;
     }
@@ -157,19 +189,109 @@ public class BlogArticleServiceImpl extends ServiceImpl<BlogArticleMapper, BlogA
         return pageInfo;
     }
 
+    private SearchResponse search(String name, Integer page, Integer size) throws IOException {
+        SearchRequest searchRequest = new SearchRequest("blog_article_search");
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        BoolQueryBuilder boolQueryBuilder = new BoolQueryBuilder();
+        MatchQueryBuilder articleTitleQuery = new MatchQueryBuilder("articleTitle", name);
+        MatchQueryBuilder articleContentQuery = new MatchQueryBuilder("articleContent", name);
+        boolQueryBuilder.should(articleContentQuery);
+        boolQueryBuilder.should(articleTitleQuery);
+        searchSourceBuilder.query(boolQueryBuilder);
+        searchSourceBuilder.from(page - 1).size(size);
+        HighlightBuilder highlightBuilder = new HighlightBuilder();
+        highlightBuilder.numOfFragments(0);
+        highlightBuilder.preTags("<span style='color:red !important;'>");
+        highlightBuilder.postTags("</span>");
+        highlightBuilder.field("articleTitle");
+        highlightBuilder.field("articleContent");
+        searchSourceBuilder.highlighter(highlightBuilder);
+        searchRequest.source(searchSourceBuilder);
+        SearchResponse search = remoteHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
+        return search;
+    }
+
     @Override
-    public PageInfo<BlogArticle> articlesByNameAndLabelAndUserId(String name, Integer limiter, Long userId, Integer label, Integer privacy, Integer page, Integer size) {
+    public PageInfo<BlogArticle> articlesByNameAndLabelAndUserId(String name, Integer limiter, Long userId, Integer label, Integer privacy, Integer page, Integer size) throws IOException {
         PageHelper.startPage(page, size);
-        List<BlogArticle> blogArticles = blogArticleMapper.articlesByNameAndLabelAndUserId(name, label, userId, limiter, privacy);
+        if (StringUtils.isEmpty(name)) {
+            List<BlogArticle> blogArticles = blogArticleMapper.articlesByNameAndLabelAndUserId(name, label, userId, limiter, privacy);
+            PageInfo<BlogArticle> pageInfo = new PageInfo<>(blogArticles);
+            return pageInfo;
+        }
+        SearchResponse search = search(name, page, size);
+        SearchHits hits = search.getHits();
+        long value = hits.getTotalHits().value;
+        SearchHit[] hits1 = hits.getHits();
+        ArrayList<Long> longs = new ArrayList<>();
+        Map<Long, ArrayList<String>> map = new HashMap<>();
+        for (SearchHit documentFields : hits1) {
+            ArrayList<String> contents = new ArrayList<>();
+            HighlightField articleTitle = documentFields.getHighlightFields().get("articleTitle");
+            HighlightField articleContent = documentFields.getHighlightFields().get("articleContent");
+            if (articleTitle != null) contents.add(articleTitle.getFragments()[0].string());
+            else contents.add(null);
+            if (articleContent != null) contents.add(articleContent.getFragments()[0].string());
+            else contents.add(null);
+            long id = Long.parseLong(documentFields.getId());
+            map.put(id, contents);
+        }
+        List<Long> ids = map.keySet().stream().collect(Collectors.toList());
+        List<BlogArticle> blogArticles = blogArticleMapper.articlesByIdsAndLabelAndUserId(ids, label, userId, limiter, privacy);
+        for (BlogArticle blogArticle : blogArticles) {
+            String title = map.get(blogArticle.getArticleContent().getArticleId()).get(0);
+            String content = map.get(blogArticle.getArticleContent().getArticleId()).get(1);
+            if (content !=null) {
+                blogArticle.getArticleContent().setArticleMd(content);
+            }
+            if (title!=null){
+                blogArticle.setArticleTitle(title);
+            }
+        }
+
         PageInfo<BlogArticle> pageInfo = new PageInfo<>(blogArticles);
         return pageInfo;
     }
 
     @RedisCacheAnnotation(key = "'articles-'+#limiter+'-'+#page+'-'+#size", conditions = "(#name=='')&&(#limiter==0)&&(#label.equals(0))&&(#privacy==0)")
     @Override
-    public PageInfo<BlogArticle> articlesByNameAndLabel(String name, Integer limiter, Integer label, Integer privacy, Integer page, Integer size) {
+    public PageInfo<BlogArticle> articlesByNameAndLabel(String name, Integer limiter, Integer label, Integer privacy, Integer page, Integer size) throws IOException {
         PageHelper.startPage(page, size);
-        List<BlogArticle> blogArticles = blogArticleMapper.articlesByNameAndLabel(name, label, limiter, privacy);
+        if (StringUtils.isEmpty(name)) {
+            List<BlogArticle> blogArticles = blogArticleMapper.articlesByNameAndLabel(name, label, limiter, privacy);
+            PageInfo<BlogArticle> pageInfo = new PageInfo<>(blogArticles);
+            return pageInfo;
+        }
+        SearchResponse search = search(name, page, size);
+        SearchHits hits = search.getHits();
+        long value = hits.getTotalHits().value;
+        SearchHit[] hits1 = hits.getHits();
+        ArrayList<Long> longs = new ArrayList<>();
+        Map<Long, ArrayList<String>> map = new HashMap<>();
+        for (SearchHit documentFields : hits1) {
+            ArrayList<String> contents = new ArrayList<>();
+            HighlightField articleTitle = documentFields.getHighlightFields().get("articleTitle");
+            HighlightField articleContent = documentFields.getHighlightFields().get("articleContent");
+            if (articleTitle != null) contents.add(articleTitle.getFragments()[0].string());
+            else contents.add(null);
+            if (articleContent != null) contents.add(articleContent.getFragments()[0].string());
+            else contents.add(null);
+            long id = Long.parseLong(documentFields.getId());
+            map.put(id, contents);
+        }
+        List<Long> ids = map.keySet().stream().collect(Collectors.toList());
+        List<BlogArticle> blogArticles = blogArticleMapper.articlesByIdAndLabel(ids, label, limiter, privacy);
+        for (BlogArticle blogArticle : blogArticles) {
+            String title = map.get(blogArticle.getArticleContent().getArticleId()).get(0);
+            String content = map.get(blogArticle.getArticleContent().getArticleId()).get(1);
+            if (content !=null) {
+                blogArticle.getArticleContent().setArticleMd(content);
+            }
+            if (title!=null){
+                blogArticle.setArticleTitle(title);
+            }
+        }
+
         PageInfo<BlogArticle> pageInfo = new PageInfo<>(blogArticles);
         return pageInfo;
     }

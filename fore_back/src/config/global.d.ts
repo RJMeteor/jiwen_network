@@ -43,7 +43,7 @@ interface BlogArticle {
 }
 
 // 文章内容映射
-interface BlogArticleContent {
+interface BlogArticleContent {  
     id: number; // 映射ID
     articleId?: number //文章id;
     articleMd: string; // 文章内容

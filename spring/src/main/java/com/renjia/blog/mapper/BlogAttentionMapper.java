@@ -68,5 +68,5 @@ public interface BlogAttentionMapper extends BaseMapper<BlogAttention> {
     Integer addAttentions(BlogAttention blogAttention);
 
     //获取热门用户
-    List<BlogUser> getOhtUser();
+    List<BlogAttention> getOhtUser(List<Integer> list);
 }

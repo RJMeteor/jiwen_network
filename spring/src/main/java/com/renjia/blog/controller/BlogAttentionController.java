@@ -108,7 +108,7 @@ public class BlogAttentionController {
 
     @GetMapping("getOhtUser")
     public BaseResponse getOhtUser() {
-        List<BlogUser> ohtUser = iBlogAttentionService.getOhtUser();
+        List<BlogAttention> ohtUser = iBlogAttentionService.getOhtUser();
         return ResultUtils.success(ohtUser);
     }
 

@@ -8,13 +8,18 @@ import com.github.pagehelper.PageInfo;
 import com.renjia.blog.mapper.BlogFavoriteMapper;
 import com.renjia.blog.mq.producer.ProductionStrategy;
 import com.renjia.blog.netty.MessageConsume;
+import com.renjia.blog.pojo.BlogArticle;
 import com.renjia.blog.pojo.BlogFavorite;
+import com.renjia.blog.service.IBlogArticleService;
 import com.renjia.blog.service.IBlogFavoriteService;
+import com.renjia.blog.util.RedisUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -32,6 +37,12 @@ public class BlogFavoriteServiceImpl extends ServiceImpl<BlogFavoriteMapper, Blo
     @Autowired
     private ProductionStrategy productionStrategy;
 
+    @Resource
+    private IBlogArticleService blogArticleService;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
+
     @Override
     public PageInfo<BlogFavorite> getFavoriteArticleByUserId(Long userId, String articleName, Long favoriteClassId, Integer isPrivate, Integer page, Integer size) {
         PageHelper.startPage(page, size);
@@ -45,6 +56,17 @@ public class BlogFavoriteServiceImpl extends ServiceImpl<BlogFavoriteMapper, Blo
         LambdaQueryWrapper<BlogFavorite> deleteLambda = new LambdaQueryWrapper<>();
         deleteLambda.eq(BlogFavorite::getArticleId, articleId).eq(BlogFavorite::getUserId, userId);
         int delete = this.baseMapper.delete(deleteLambda);
+        if (delete>0){
+            BlogArticle blogArticle = blogArticleService.getById(articleId);
+            if (blogArticle.getArticleLimiter()==0) {
+                redisTemplate.boundZSetOps(RedisUtil.HOTARTICLE)
+                        .incrementScore(blogArticle.getId(), -1);
+            }else {
+                redisTemplate.boundZSetOps(RedisUtil.HOTTOPICE)
+                        .incrementScore(blogArticle.getId(), -1);
+
+            }
+        }
         return delete;
     }
 
@@ -68,6 +90,15 @@ public class BlogFavoriteServiceImpl extends ServiceImpl<BlogFavoriteMapper, Blo
         int insert = blogFavoriteMapper.addFavorites(blogFavorite);
         if (insert > 0 && personId != 0) {
 //            BlogFavorite favoritesById = blogFavoriteMapper.getFavoritesById(blogFavorite.getId());
+            BlogArticle blogArticle = blogArticleService.getById(articleId);
+            if (blogArticle.getArticleLimiter()==0) {
+                redisTemplate.boundZSetOps(RedisUtil.HOTARTICLE)
+                        .incrementScore(blogArticle.getId(), 1);
+            }else {
+                redisTemplate.boundZSetOps(RedisUtil.HOTTOPICE)
+                        .incrementScore(blogArticle.getId(), 1);
+
+            }
             MessageConsume message = new MessageConsume(MessageConsume.MessageType.FAVORITE.getType(), JSON.toJSONString(blogFavorite.getId()));
             productionStrategy.sendMessage(message.getType(), message);
         }
@@ -77,6 +108,19 @@ public class BlogFavoriteServiceImpl extends ServiceImpl<BlogFavoriteMapper, Blo
     @Override
     public Integer deleteFavoriteArticleById(List<Long> ids) {
         int i = this.getBaseMapper().deleteBatchIds(ids);
+        if (i>0) {
+            List<Long> collect = this.listByIds(ids).stream().map(ele -> ele.getArticleId()).collect(Collectors.toList());
+            for (BlogArticle blogArticle : blogArticleService.listByIds(collect)) {
+                if (blogArticle.getArticleLimiter()==0) {
+                    redisTemplate.boundZSetOps(RedisUtil.HOTARTICLE)
+                            .incrementScore(blogArticle.getId(), -1);
+                }else {
+                    redisTemplate.boundZSetOps(RedisUtil.HOTTOPICE)
+                            .incrementScore(blogArticle.getId(), -1);
+
+                }
+            }
+        }
         return i;
     }
 

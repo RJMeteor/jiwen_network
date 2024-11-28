@@ -2,17 +2,22 @@ netty:
   port: 9003
   url: /websocket
   host: localhost
+elasticsearch:
+  host: 127.0.0.1
+  port: 9200
+  username:
+  authenticationPassword:
 server:
   port: 9002
 spring:
   application:
     name: blog-9001
   rabbitmq:
-    username: ****
-    password: ****
+    username: ${mq.name}
+    password: ${mq.password}
     virtual-host: /
-    port: 5672
-    addresses: ****
+    port: ${mq.port}
+    host: ${mq.host}
     #开启发送端消息抵达broker的确认
     publisher-confirm-type: correlated
     #开启发送端消息抵达队列的确认
@@ -46,9 +51,9 @@ spring:
     # tencent mail port  这个是固定的
     port: 465
     # 你的QQ邮箱
-    username: ****
+    username: ${email.name}
     # 进入邮箱配置后得到的授权码
-    password: ****
+    password: ${email.password}
     test-connection: true
     properties:
       mail:
@@ -62,10 +67,10 @@ spring:
     # 超时时间
     timeout: 10000ms
     # 服务器地址
-    host: ****
-    password: ****
+    host: ${redis.host}
+    password: ${redis.password}
     # 服务器端口号
-    port: 6379
+    port: ${redis.port}
     # 连接数据库
     database: 0
     lettuce:
@@ -100,4 +105,15 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
   mapper-locations: classpath:/mapper/*.xml
-
+xxl:
+  job:
+    admin:
+      addresses: ${xxxjob.address}
+    executor:
+      appname: blod-job
+      address:
+      ip:
+      port: 9999
+      logpath: /data/applogs/xxl-job/jobhandler
+      logretentiondays: 30
+    accessToken: default_token

@@ -112,6 +112,8 @@ interface BlogAttention {
     updateTime: string; // 更新时间
     active: number; // 0:在推送列表里，1：不在
     stated: number; // 0:未读，1:已读
+    attentionUser: BlogUser;
+    user: BlogUser;
 }
 
 // 博客聊天记录

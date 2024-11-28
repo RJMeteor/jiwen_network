@@ -61,5 +61,5 @@ public interface IBlogAttentionService extends IService<BlogAttention> {
    Integer deleteAttentions( List<Long> ids);
 
     //获取热门用户
-    List<BlogUser> getOhtUser();
+    List<BlogAttention> getOhtUser();
 }

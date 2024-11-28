@@ -12,12 +12,15 @@ import com.renjia.blog.pojo.BlogLikeBrowse;
 import com.renjia.blog.pojo.BlogUser;
 import com.renjia.blog.service.IBlogAttentionService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.renjia.blog.util.RedisUtil;
 import com.renjia.blog.util.WebSocketUtil;
 import com.renjia.blog.util.WebsocketMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -35,6 +38,8 @@ public class BlogAttentionServiceImpl extends ServiceImpl<BlogAttentionMapper, B
     private BlogAttentionMapper blogAttentionMapper;
     @Autowired
     private ProductionStrategy productionStrategy;
+    @Autowired
+    private RedisTemplate redisTemplate;
 
 
     @Override
@@ -44,6 +49,7 @@ public class BlogAttentionServiceImpl extends ServiceImpl<BlogAttentionMapper, B
         blogAttention.setUserId(userId);
         Integer integer = blogAttentionMapper.addAttentions(blogAttention);
         if (integer > 0) {
+            redisTemplate.boundZSetOps(RedisUtil.HOTUSER).incrementScore(blogAttention.getAttentionUserId(), 1);
             BlogAttention attentionsById = blogAttentionMapper.getAttentionsById(blogAttention.getId());
             MessageConsume message = new MessageConsume(MessageConsume.MessageType.ATTENTION.getType(), JSON.toJSONString(attentionsById));
             productionStrategy.sendMessage(message.getType(), message);
@@ -57,6 +63,9 @@ public class BlogAttentionServiceImpl extends ServiceImpl<BlogAttentionMapper, B
         blogAttentionLambdaQueryWrapper.eq(BlogAttention::getUserId, userId)
                 .eq(BlogAttention::getAttentionUserId, personId);
         int delete = this.getBaseMapper().delete(blogAttentionLambdaQueryWrapper);
+        if (delete > 0) {
+            redisTemplate.boundZSetOps(RedisUtil.HOTUSER).incrementScore(personId, -1);
+        }
         return delete;
     }
 
@@ -104,12 +113,19 @@ public class BlogAttentionServiceImpl extends ServiceImpl<BlogAttentionMapper, B
     @Override
     public Integer deleteAttentions(List<Long> ids) {
         int i = this.getBaseMapper().deleteBatchIds(ids);
+        if (i > 0) {
+            for (Long id : ids) {
+                redisTemplate.boundZSetOps(RedisUtil.HOTUSER).incrementScore(id, -1);
+            }
+        }
         return i;
     }
 
     @Override
-    public List<BlogUser> getOhtUser() {
-        List<BlogUser> ohtUser = blogAttentionMapper.getOhtUser();
-        return ohtUser;
+    public List<BlogAttention> getOhtUser() {
+//        List<BlogAttention> ohtUser = blogAttentionMapper.getOhtUser();
+        Object o = redisTemplate.opsForValue().get(RedisUtil.HOTUSER+":hot");
+        ArrayList<BlogAttention> arrayList = JSON.parseObject((String) o, ArrayList.class);
+        return arrayList;
     }
 }

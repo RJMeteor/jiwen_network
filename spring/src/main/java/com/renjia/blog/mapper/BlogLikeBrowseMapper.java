@@ -66,10 +66,4 @@ public interface BlogLikeBrowseMapper extends BaseMapper<BlogLikeBrowse> {
 
     Integer addLike(BlogLikeBrowse blogLikeBrowse);
 
-    //获取热门文章
-    List<BlogLikeBrowse> getOhtArticle();
-
-
-    //获取热门话题
-    List<BlogLikeBrowse> getOhtTopic();
 }

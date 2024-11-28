@@ -924,7 +924,7 @@ function deleteFeedbackIdsRequest(feedbackIds: number[]): Promise<PageInfoType<B
 
 
 //获取热门文章
-function getOhtArticleRequest(): Promise<BlogLikeBrowse[]> {
+function getOhtArticleRequest(): Promise<BlogArticle[]> {
     return axiosRequset({
         url: "/blogLikeBrowse/getOhtArticle",
         method: "get",
@@ -932,7 +932,7 @@ function getOhtArticleRequest(): Promise<BlogLikeBrowse[]> {
 }
 
 //获取热门话题
-function getOhtTopicRequest(): Promise<BlogLikeBrowse[]> {
+function getOhtTopicRequest(): Promise<BlogArticle[]> {
     return axiosRequset({
         url: "/blogLikeBrowse/getOhtTopic",
         method: "get",
@@ -940,7 +940,7 @@ function getOhtTopicRequest(): Promise<BlogLikeBrowse[]> {
 }
 
 //获取热门话题
-function getOhtUserRequest(): Promise<BlogUser[]> {
+function getOhtUserRequest(): Promise<BlogAttention[]> {
     return axiosRequset({
         url: "/blogAttention/getOhtUser",
         method: "get",

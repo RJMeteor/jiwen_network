@@ -178,7 +178,7 @@
         return true
     }
 
-    const ohtArticle = ref<BlogLikeBrowse[]>([])
+    const ohtArticle = ref<BlogArticle[]>([])
 
     function getOhtArticleAction() {
         ohtArticle.value = []
@@ -187,7 +187,7 @@
         })
     }
 
-    const ohtUser = ref<BlogUser[]>([])
+    const ohtUser = ref<BlogAttention[]>([])
 
     function getOhtUserAction() {
         ohtUser.value = []
@@ -345,8 +345,7 @@
                             <n-thing>
                                 <template #header>
                                     <n-text strong>
-                                        <div style="display: flex;justify-content: center;align-items: center">
-                                            {{ele.articleTitle}}
+                                        <div style="display: flex;justify-content: center;align-items: center" v-html="ele.articleTitle">
                                         </div>
                                     </n-text>
                                 </template>
@@ -401,7 +400,7 @@
                                     <n-gi :span="ele?.articleImage?7 : 8">
                                         <n-ellipsis :tooltip="false" :line-clamp="3" style="max-width: 100%">
                                             <n-text depth="3">
-                                                {{ele?.articleContent?.articleMd}}
+                                              <span v-html="ele?.articleContent?.articleMd"></span>
                                             </n-text>
                                         </n-ellipsis>
                                     </n-gi>
@@ -442,12 +441,12 @@
                             </template>
                             <n-space vertical>
                                 <n-button text v-for="(ele,index) in ohtArticle"
-                                          @click="readerAction(ele.person.id,ele.article?.articleContent?.articleId)">
+                                          @click="readerAction(ele.user.id,ele?.articleContent?.articleId)">
                                     <n-grid x-gap="12" :cols="1">
                                         <n-gi>
                                             <n-ellipsis :tooltip="false"
                                                         style="max-width: 100%">
-                                                {{ele.article?.articleTitle}}
+                                                {{ele?.articleTitle}}
                                             </n-ellipsis>
                                         </n-gi>
                                     </n-grid>

@@ -1,6 +1,6 @@
 ## 🍉项目技术点
 
-后端：`Maven`、`Spring Boot` 、`Spring MVC `、 `Mybatis Plus` 、`MySQL`、  `OSS`、 `JWT`、 `Netty`、 `RabbitMQ`、 `Redis`、 `Nginx`、 `Git`、 `Linux`、 `Docker`、 `Gitlab CI/CD`
+后端：`Maven`、`Spring Boot`、`Spring MVC`、`MyBatis`、`JWT`、`Canal`、`RabbitMQ`、`MySQL`、`Redis`、`Elasticsearch`、`XXL-JOB`、`Netty`、 `Nginx`、 `Git`、 `Linux`、 `Docker`、 `Gitlab CI/CD`
 
 前端：`Vite`、`Vue3`、`Naive UI`、`Vue Router`、`Axios`、`Pinia`、`IndexDB`、`Vditor`、`Sass`、`JSX`、`TypeScript`、`marked`、`highlight.js`
 

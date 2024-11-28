@@ -14,6 +14,10 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class RedisUtil {
 
+    public static final String HOTARTICLE = "hotArticle";
+    public static final String HOTTOPICE = "hotTopice";
+    public static final String HOTUSER = "hotUser";
+
     @Autowired
     //@Qualifier("myRedisTemplate") //一定要保证是我们自己写的RedisTemplate
     private RedisTemplate<String, Object> redisTemplate;

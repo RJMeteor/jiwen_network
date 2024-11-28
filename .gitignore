@@ -1,3 +1,9 @@
-./.env
-./.gitlab-ci.yml
-./application.yml
+.idea/
+consume_config/
+xxl-job-admin/
+canal.adapter-1.1.5-SNAPSHOT/
+canal.deployer-1.1.5-SNAPSHOT/
+elasticsearch-7.6.1-windows-x86_64/
+elasticsearch-analysis-ik-7.6.1/
+kibana-7.6.1-windows-x86_64/
+

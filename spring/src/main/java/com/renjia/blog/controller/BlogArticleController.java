@@ -10,6 +10,7 @@ import com.renjia.blog.pojo.BlogUser;
 import com.renjia.blog.service.IBlogArticleService;
 import com.renjia.blog.service.IBlogUserService;
 import com.renjia.blog.util.ResultUtils;
+import com.renjia.blog.util.TrieSearcherUtil;
 import com.renjia.blog.util.exceptions.EmptyArticleException;
 import com.renjia.blog.util.other.BaseResponse;
 import com.renjia.blog.util.other.ErrorCode;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -180,7 +182,7 @@ public class BlogArticleController {
                                                @RequestParam("label") Integer label,
                                                @RequestParam("privacy") Integer privacy,
                                                @RequestParam("size") Integer size,
-                                               @RequestParam(value = "articlesName", required = false) String name) {
+                                               @RequestParam(value = "articlesName", required = false) String name) throws IOException {
         System.out.println(name + "-" + limiter + "-" + label + "-" + privacy);
         PageInfo<BlogArticle> blogArticles = iBlogArticleService.articlesByNameAndLabel(name, limiter, label, privacy, page, size);
         return ResultUtils.success(blogArticles);
@@ -203,7 +205,7 @@ public class BlogArticleController {
                                                         @RequestParam("label") Integer label,
                                                         @RequestParam("privacy") Integer privacy,
                                                         @RequestParam("size") Integer size,
-                                                        @RequestParam(value = "articlesName", required = false) String name) {
+                                                        @RequestParam(value = "articlesName", required = false) String name) throws IOException {
         PageInfo<BlogArticle> blogArticles = iBlogArticleService.articlesByNameAndLabelAndUserId(name, limiter, userId, label, privacy, page, size);
         return ResultUtils.success(blogArticles);
     }

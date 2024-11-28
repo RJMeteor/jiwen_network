@@ -9,6 +9,7 @@ import com.renjia.blog.pojo.BlogArticleLableClass;
 import com.renjia.blog.util.exceptions.EmptyArticleException;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -131,7 +132,7 @@ public interface IBlogArticleService extends IService<BlogArticle> {
                                                         Integer limiter,
                                                         Integer label,
                                                         Integer privacy,
-                                                        Integer page, Integer size);
+                                                        Integer page, Integer size) throws IOException;
 
     /**
      * 获取我关注的人的文章
@@ -150,7 +151,7 @@ public interface IBlogArticleService extends IService<BlogArticle> {
                                                         Long userId,
                                                         Integer label,
                                                         Integer privacy,
-                                                        Integer page, Integer size);
+                                                        Integer page, Integer size) throws IOException;
 
 
     /**

@@ -72,9 +72,20 @@
             resultMap="resultMap">
         <include refid="all"/>
         where  deleted=0
+        and attention_user_id in
+        <foreach collection="list" open="(" separator="," close=")" item="ele">
+            #{ele}
+        </foreach>
         and attention_user_id in (SELECT n1.id FROM blog_user as n1 where n1.deleted=0)
-        group by attention_user_id
-        order by count(attention_user_id) desc
-        limit 0,7
     </select>
+
+<!--    <select id="getOhtUser"-->
+<!--            resultMap="resultMap">-->
+<!--        <include refid="all"/>-->
+<!--        where  deleted=0-->
+<!--        and attention_user_id in (SELECT n1.id FROM blog_user as n1 where n1.deleted=0)-->
+<!--        group by attention_user_id-->
+<!--        order by count(attention_user_id) desc-->
+<!--        limit 0,7-->
+<!--    </select>-->
 </mapper>

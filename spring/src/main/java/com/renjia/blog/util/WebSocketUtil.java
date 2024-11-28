@@ -10,8 +10,8 @@ import javax.websocket.server.ServerEndpoint;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@ServerEndpoint("/websocket/{id}")
-@Component
+//@ServerEndpoint("/websocket/{id}")
+//@Component
 public class WebSocketUtil {
 
 

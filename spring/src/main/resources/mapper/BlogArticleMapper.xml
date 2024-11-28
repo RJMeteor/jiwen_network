@@ -67,6 +67,23 @@
         </where>
     </select>
 
+    <select id="articlesByIdAndLabel" resultMap="resultMap">
+        <include refid="all"/>
+        <where>
+            and deleted=0
+            and id in
+            <foreach collection="list" item="ele" separator="," close=")" open="(">
+                #{ele}
+            </foreach>
+            and user_id in (select n1.id from blog_user as n1 where n1.id=user_id and n1.deleted=0)
+            <if test="label != 0">
+                and id in ( SELECT article_id FROM blog_article_lable_class where article_lables_id=#{label})
+            </if>
+            and article_limiter=#{limiter} and article_privacy=#{privacy}
+        </where>
+        order by update_time desc
+    </select>
+
     <!--根据文章名和文章标签查询-->
     <select id="articlesByNameAndLabel" resultMap="resultMap">
         <include refid="all"/>
@@ -78,6 +95,24 @@
             </if>
             <if test="articlesName != null and articlesName !='' ">
                 and article_title like carticlesByNameAndLabelAndUserIdoncat(concat('%',#{articlesName}),'%')
+            </if>
+            and article_limiter=#{limiter} and article_privacy=#{privacy}
+        </where>
+        order by update_time desc
+    </select>
+
+    <select id="articlesByIdsAndLabelAndUserId" resultMap="resultMap">
+        <include refid="all"/>
+        <where>
+            and deleted=0
+            and id in
+            <foreach collection="list" item="ele" separator="," close=")" open="(">
+                #{ele}
+            </foreach>
+            and user_id in (select n1.id from blog_user as n1 where n1.id=user_id and n1.deleted=0)
+            and user_id in ( select an.attention_user_id from blog_attention as an where an.user_id=#{userId} and an.deleted=0)
+            <if test="label != 0">
+                and id in ( SELECT article_id FROM blog_article_lable_class where article_lables_id=#{label})
             </if>
             and article_limiter=#{limiter} and article_privacy=#{privacy}
         </where>
@@ -132,6 +167,27 @@
         <include refid="all"/>
         where id=#{articleId} and deleted=0
         order by update_time desc
+    </select>
+
+    <select id="getOhtArticle"
+            resultMap="resultMap">
+        <include refid="all"/>
+        where  deleted=0
+        and id  in
+        <foreach collection="list" open="(" separator="," close=")" item="ele">
+            #{ele}
+        </foreach>
+    </select>
+
+
+    <select id="getOhtTopic"
+            resultMap="resultMap">
+        <include refid="all"/>
+        where deleted=0
+        and id in
+        <foreach collection="list" open="(" separator="," close=")" item="ele">
+            #{ele}
+        </foreach>
     </select>
 
 </mapper>

@@ -108,7 +108,7 @@
         }
     }
 
-    const ohtTopic = ref<BlogLikeBrowse[]>([])
+    const ohtTopic = ref<BlogArticle[]>([])
 
     function ohtTopicAction() {
         ohtTopic.value = []
@@ -467,12 +467,12 @@
                                     <n-gi>
                                         <n-space vertical>
                                             <n-button text v-for="(ele,index) in ohtTopic"
-                                                      @click="changeShowModal(ele.person.id,ele.article)">
+                                                      @click="changeShowModal(ele.user.id,ele)">
                                                 <n-grid x-gap="12" :cols="1">
                                                     <n-gi>
                                                         <n-ellipsis :tooltip="false"
                                                                     style="max-width: 100%">
-                                                            {{ele.article?.articleTitle}}
+                                                            {{ele?.articleTitle}}
                                                         </n-ellipsis>
                                                     </n-gi>
                                                 </n-grid>

@@ -12,8 +12,8 @@ import java.io.IOException;
  * Use for: 实现一个客户端
  * Explain:
  */
-@Component
-@ServerEndpoint("/chat/{auth}")
+//@Component
+//@ServerEndpoint("/chat/{auth}")
 public class WebsocketClient implements Websocket.LinkPoint, Websocket.Client {
     private static WebsocketManagerUtil demoManager = WebsocketManagerUtil.getInstance();
     private String tag;

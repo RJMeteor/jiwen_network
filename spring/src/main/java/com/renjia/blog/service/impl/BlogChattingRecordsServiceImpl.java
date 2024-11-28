@@ -13,6 +13,7 @@ import com.renjia.blog.netty.WebSocketHandler;
 import com.renjia.blog.pojo.BlogChattingRecords;
 import com.renjia.blog.pojo.BlogChattingRecordsContent;
 import com.renjia.blog.service.IBlogChattingRecordsService;
+import com.renjia.blog.util.TrieSearcherUtil;
 import com.renjia.blog.util.exceptions.OtherException;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,8 +45,14 @@ public class BlogChattingRecordsServiceImpl extends ServiceImpl<BlogChattingReco
     @Autowired
     private TransactionTemplate transactionTemplate;
 
+    @Autowired
+    private TrieSearcherUtil trieSearcherUtil;
+
     @Override
     public BlogChattingRecords addChat(BlogChattingRecords blogChattingRecords) {
+        String replace = trieSearcherUtil.replace(blogChattingRecords.getChattingRecordsContent().getChattingRecordsContent(), "****");
+        blogChattingRecords.getChattingRecordsContent().setChattingRecordsContent(replace);
+
         BlogChattingRecords chat1 = transactionTemplate.execute((transactionStatus) ->
                 Optional.ofNullable(blogChattingRecords).flatMap(blog -> {
                     BlogChattingRecordsContent chattingRecordsContent = blog.getChattingRecordsContent();

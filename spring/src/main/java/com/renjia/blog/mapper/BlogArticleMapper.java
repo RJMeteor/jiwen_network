@@ -3,6 +3,7 @@ package com.renjia.blog.mapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.renjia.blog.pojo.BlogArticle;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.renjia.blog.pojo.BlogLikeBrowse;
 import com.renjia.blog.pojo.BlogUser;
 import org.apache.ibatis.annotations.*;
 import org.springframework.cache.annotation.Cacheable;
@@ -44,10 +45,20 @@ public interface BlogArticleMapper extends BaseMapper<BlogArticle> {
     List<BlogArticle> articleByUserIdAndName(@Param("userId") Long userId, @Param("isPrivate") Integer isPrivate, @Param("limiter") Integer limiter, @Param("articleName") String articleName);
 
     List<BlogArticle> articlesByNameAndLabelAndUserId(@Param("articlesName") String articlesName,
-                                             @Param("label") Integer label,
-                                             @Param("userId") Long userId,
-                                             @Param("limiter") Integer limiter,
-                                             @Param("privacy") Integer privacy);
+                                                      @Param("label") Integer label,
+                                                      @Param("userId") Long userId,
+                                                      @Param("limiter") Integer limiter,
+                                                      @Param("privacy") Integer privacy);
+
+    List<BlogArticle> articlesByIdsAndLabelAndUserId(@Param("list") List<Long> articleIds,
+                                                      @Param("label") Integer label,
+                                                      @Param("userId") Long userId,
+                                                      @Param("limiter") Integer limiter,
+                                                      @Param("privacy") Integer privacy);
+    List<BlogArticle> articlesByIdAndLabel(@Param("list") List<Long> articleIds,
+                            @Param("label") Integer label,
+                           @Param("limiter") Integer limiter,
+                           @Param("privacy") Integer privacy);
 
     List<BlogArticle> articlesByNameAndLabel(@Param("articlesName") String articlesName,
                                              @Param("label") Integer label,
@@ -63,7 +74,7 @@ public interface BlogArticleMapper extends BaseMapper<BlogArticle> {
     Long getArticleId(@Param("articlesContentId") String articlesContentId);
 
 
-//    @Cacheable(value = "aa",key = "'dd-'+#a0+'-'+#a1")
+    //    @Cacheable(value = "aa",key = "'dd-'+#a0+'-'+#a1")
     BlogArticle getArticlesByUserIdAndArticlesId(@Param("userId") Long userId, @Param("articlesId") Long articlesId);
 
     /**
@@ -71,4 +82,11 @@ public interface BlogArticleMapper extends BaseMapper<BlogArticle> {
      * @return
      */
     BlogArticle getArticleById(@Param("articleId") Integer articleId);
+
+    //获取热门文章
+    List<BlogArticle> getOhtArticle(List<Integer> list);
+
+
+    //获取热门话题
+    List<BlogArticle> getOhtTopic(List<Integer> list);
 }
